@@ -1,9 +1,72 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TITLE="${1:-pi Agent}"
-MESSAGE="${2:-Task complete}"
+# Usage: ./notify.sh "<message>" ["<agent-label>"]
+MESSAGE="${1:-Task complete}"
+AGENT_LABEL="${2:-$(whoami)}"
 IDLE_THRESHOLD_SECONDS="${PI_NOTIFY_IDLE_THRESHOLD_SECONDS:-300}"
+
+# ------------------------------------------------------------------
+# Build the notification title.
+#   Format:  user@host repo (branch)
+#   Session: user@host repo (branch) [session]
+#   Override (PI_NOTIFY_TITLE): use exactly that string.
+# ------------------------------------------------------------------
+build_title() {
+  # Full manual override — use exactly what the user set
+  if [[ -n "${PI_NOTIFY_TITLE:-}" ]]; then
+    echo "${PI_NOTIFY_TITLE}"
+    return
+  fi
+
+  local label="$AGENT_LABEL"
+
+  # ----- hostname -----
+  local hostname
+  hostname="$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo "unknown")"
+
+  # ----- location: git repo (with branch), dir basename, or ~ -----
+  local location=""
+  local cwd="$PWD"
+
+  if [[ "$cwd" == "$HOME" ]]; then
+    location="~"
+  elif [[ "$cwd" == "/" ]]; then
+    location="/"
+  else
+    local repo_root
+    repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+    if [[ -n "$repo_root" ]]; then
+      local repo_name branch
+      repo_name="$(basename "$repo_root")"
+      branch="$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
+      if [[ -n "$branch" && "$branch" != "HEAD" ]]; then
+        location="${repo_name} (${branch})"
+      else
+        location="${repo_name}"
+      fi
+    else
+      location="$(basename "$cwd")"
+    fi
+  fi
+
+  # ----- optional session label (multiple concurrent agents) -----
+  local session="${PI_NOTIFY_SESSION_NAME:-}"
+
+  # ----- assemble -----
+  local title="${label}@${hostname} ${location}"
+  if [[ -n "$session" ]]; then
+    title="${title} [${session}]"
+  fi
+
+  echo "${title}"
+}
+
+TITLE="$(build_title)"
+
+# ------------------------------------------------------------------
+# Notification backends
+# ------------------------------------------------------------------
 
 send_macos_notification() {
   osascript - "${TITLE}" "${MESSAGE}" <<'APPLESCRIPT' 2>/dev/null || true
@@ -32,6 +95,10 @@ send_ntfy_notification() {
     --data-binary "${MESSAGE}" \
     "${server}/${PI_NOTIFY_NTFY_TOPIC}" >/dev/null || true
 }
+
+# ------------------------------------------------------------------
+# Dispatch
+# ------------------------------------------------------------------
 
 idle_seconds() {
   ioreg -c IOHIDSystem 2>/dev/null | awk '/HIDIdleTime/ { print int($NF / 1000000000); exit }'

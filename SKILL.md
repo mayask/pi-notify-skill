@@ -28,22 +28,40 @@ Activate this skill when the user prompt includes any of the following (or close
 Run from the skill directory:
 
 ```bash
-./scripts/notify.sh "<title>" "<message>"
+./scripts/notify.sh "<message>" ["<agent-label>"]
 ```
 
-- `<title>`: usually `"pi Agent"` or a domain-specific title (e.g., `"Tests"`, `"Deploy"`).
 - `<message>`: a concise 1-sentence summary of what was completed, or a failure note if something went wrong. Keep it under 120 characters.
+- `<agent-label>` (optional): overrides the username as the agent name in the title. Use a short label like `"Deploy"`, `"Format"`, or `"Lint"` when the task is a specific domain action.
+
+The title is automatically built from the environment:
+
+| Component | Source | Example |
+|-----------|--------|---------|
+| Agent label | first arg (or `whoami`) | `maxim` / `Deploy` |
+| Hostname | `hostname -s` | `mbp` / `desktop` |
+| OS | `uname -s` | `macOS` / `Linux` |
+| Location | git repo basename (or dir basename, or `~`) | `pi-notify-skill` |
+| Branch | `git branch --show-current` | `main` / `feat/new-feature` |
+| Session | `PI_NOTIFY_SESSION_NAME` env var | `work` / `swe-1` |
+
+Resulting title format: `pi@host [OS] repo (branch)` or `pi@host [OS] repo (branch) [session]`
 
 ### Examples
 
 After a successful task:
 ```bash
-./scripts/notify.sh "pi Agent" "Refactored user repository and updated tests"
+./scripts/notify.sh "Refactored user repository and updated tests"
 ```
 
 After a partial failure:
 ```bash
-./scripts/notify.sh "pi Agent" "Refactored user repository; 2 tests still failing"
+./scripts/notify.sh "Refactored user repository; 2 tests still failing"
+```
+
+With a domain-specific agent label:
+```bash
+./scripts/notify.sh "Deployment complete, all pods healthy" "Deploy"
 ```
 
 ## Important Rules
@@ -51,5 +69,16 @@ After a partial failure:
 - **Only send one notification per user prompt.** Even if the task spanned multiple files or steps, send a single summary notification at the end.
 - Presence is determined by macOS HID idle time. The default idle threshold is 300 seconds and can be overridden with `PI_NOTIFY_IDLE_THRESHOLD_SECONDS`.
 - If the Mac appears idle, locked away, or the OS is not macOS, the script sends via ntfy when configured with environment variables: `PI_NOTIFY_NTFY_SERVER`, `PI_NOTIFY_NTFY_TOPIC`, and `PI_NOTIFY_NTFY_TOKEN`.
-- Do not store ntfy credentials in the skill directory or commit them to source control.
+- Do not store ntfy credentials in the skill directory or commit them to source code.
 - **Do not mention the notification** in your final response unless the user explicitly asks about it.
+
+## Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `PI_NOTIFY_NTFY_SERVER` | ntfy server URL (e.g. `https://ntfy.sh`) |
+| `PI_NOTIFY_NTFY_TOPIC` | ntfy topic name |
+| `PI_NOTIFY_NTFY_TOKEN` | ntfy auth token |
+| `PI_NOTIFY_IDLE_THRESHOLD_SECONDS` | macOS idle threshold before falling back to ntfy (default: 300) |
+| `PI_NOTIFY_SESSION_NAME` | Optional label appended to the title (e.g. `work`, `swe-1`). Useful for distinguishing multiple concurrent agents on the same machine. |
+| `PI_NOTIFY_TITLE` | Full title override — if set, replaces the entire auto-derived title |

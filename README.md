@@ -24,6 +24,23 @@ The helper script sends:
 
 Idle detection uses macOS HID idle time. The default idle threshold is 300 seconds.
 
+## Notification titles
+
+Titles are automatically enriched with environment context — the agent name is your username:
+
+```
+maxim@mbp [macOS] pi-notify-skill (main)
+maxim@desktop [Linux] my-project (feat/new-feature)
+```
+
+This tells you at a glance which machine, OS, repository, and branch a notification is from — handy when using the same ntfy topic across multiple machines and repos.
+
+For multiple concurrent agents, set `PI_NOTIFY_SESSION_NAME` (e.g. `work`, `swe-1`) and it's appended:
+
+```
+pi@desktop [Linux] my-project (main) [swe-1]
+```
+
 ## Install
 
 Copy this directory into your pi agent skills directory:
@@ -44,7 +61,13 @@ Run the checks and notify me when done.
 The skill will run this script as the last command before the final response:
 
 ```bash
-./scripts/notify.sh "pi Agent" "Task complete"
+./scripts/notify.sh "Task complete"
+```
+
+An optional second argument can label the agent (e.g. `"Deploy"`, `"Lint"`):
+
+```bash
+./scripts/notify.sh "Deployment complete" "Deploy"
 ```
 
 ## Optional ntfy fallback
@@ -62,6 +85,13 @@ Optional idle threshold override:
 ```bash
 export PI_NOTIFY_IDLE_THRESHOLD_SECONDS=300
 ```
+
+## Customizing notification titles
+
+| Env variable | Purpose |
+|---|---|
+| `PI_NOTIFY_SESSION_NAME` | Label appended to the title for distinguishing multiple concurrent agents (e.g. `work`, `swe-1`) |
+| `PI_NOTIFY_TITLE` | Full override — replaces the entire auto-derived title with your own string |
 
 ## Files
 
