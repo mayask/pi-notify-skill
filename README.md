@@ -24,23 +24,6 @@ The helper script sends:
 
 Idle detection uses macOS HID idle time. The default idle threshold is 300 seconds.
 
-## Notification titles
-
-Titles are automatically enriched with environment context — the agent name is your username:
-
-```
-maxim@mbp [macOS] pi-notify-skill (main)
-maxim@desktop [Linux] my-project (feat/new-feature)
-```
-
-This tells you at a glance which machine, OS, repository, and branch a notification is from — handy when using the same ntfy topic across multiple machines and repos.
-
-For multiple concurrent agents, set `PI_NOTIFY_SESSION_NAME` (e.g. `work`, `swe-1`) and it's appended:
-
-```
-pi@desktop [Linux] my-project (main) [swe-1]
-```
-
 ## Install
 
 Copy this directory into your pi agent skills directory:
