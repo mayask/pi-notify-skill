@@ -1,0 +1,9 @@
+{
+  "name": "pi-notify-skill",
+  "version": "1.0.0",
+  "description": "Send a completion notification when pi finishes a task",
+  "keywords": ["pi-package", "pi-skill"],
+  "pi": {
+    "skills": ["./SKILL.md"]
+  }
+}
