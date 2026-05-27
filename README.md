@@ -24,13 +24,31 @@ The helper script sends:
 
 Idle detection uses macOS HID idle time. The default idle threshold is 300 seconds.
 
+## Notification titles
+
+The title is automatically built like a shell prefix so you can tell at a glance where a notification is coming from:
+
+```
+maxim@mbp pi-notify-skill (main)
+maxim@desktop my-project (feat/new-feature)
+```
+
+For multiple concurrent agents, set `PI_NOTIFY_SESSION_NAME` and it's appended:
+
+```
+maxim@desktop my-project (main) [swe-1]
+```
+
 ## Install
 
-Copy this directory into your pi agent skills directory:
+```bash
+pi install git:github.com/mayask/pi-notify-skill
+```
+
+### Update
 
 ```bash
-mkdir -p ~/.pi/agent/skills
-cp -R notify ~/.pi/agent/skills/notify
+pi update git:github.com/mayask/pi-notify-skill
 ```
 
 ## Usage
@@ -78,5 +96,6 @@ export PI_NOTIFY_IDLE_THRESHOLD_SECONDS=300
 
 ## Files
 
+- `package.json` - pi package manifest
 - `SKILL.md` - pi skill instructions
 - `scripts/notify.sh` - notification helper
