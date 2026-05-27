@@ -8,8 +8,8 @@ IDLE_THRESHOLD_SECONDS="${PI_NOTIFY_IDLE_THRESHOLD_SECONDS:-300}"
 
 # ------------------------------------------------------------------
 # Build the notification title.
-#   Format:  user@host repo (branch)
-#   Session: user@host repo (branch) [session]
+#   In a git repo:   user@host repo (branch) [session]
+#   Not in a repo:   user@host                    [session]
 #   Override (PI_NOTIFY_TITLE): use exactly that string.
 # ------------------------------------------------------------------
 build_title() {
@@ -25,28 +25,18 @@ build_title() {
   local hostname
   hostname="$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo "unknown")"
 
-  # ----- location: git repo (with branch), dir basename, or ~ -----
+  # ----- git repo context: only show when in a git repo -----
   local location=""
-  local cwd="$PWD"
-
-  if [[ "$cwd" == "$HOME" ]]; then
-    location="~"
-  elif [[ "$cwd" == "/" ]]; then
-    location="/"
-  else
-    local repo_root
-    repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-    if [[ -n "$repo_root" ]]; then
-      local repo_name branch
-      repo_name="$(basename "$repo_root")"
-      branch="$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
-      if [[ -n "$branch" && "$branch" != "HEAD" ]]; then
-        location="${repo_name} (${branch})"
-      else
-        location="${repo_name}"
-      fi
+  local repo_root
+  repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+  if [[ -n "$repo_root" ]]; then
+    local repo_name branch
+    repo_name="$(basename "$repo_root")"
+    branch="$(git branch --show-current 2>/dev/null || git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
+    if [[ -n "$branch" && "$branch" != "HEAD" ]]; then
+      location="${repo_name} (${branch})"
     else
-      location="$(basename "$cwd")"
+      location="${repo_name}"
     fi
   fi
 
@@ -54,7 +44,10 @@ build_title() {
   local session="${PI_NOTIFY_SESSION_NAME:-}"
 
   # ----- assemble -----
-  local title="${label}@${hostname} ${location}"
+  local title="${label}@${hostname}"
+  if [[ -n "$location" ]]; then
+    title="${title} ${location}"
+  fi
   if [[ -n "$session" ]]; then
     title="${title} [${session}]"
   fi
