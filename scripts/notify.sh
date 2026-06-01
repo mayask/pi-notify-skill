@@ -94,7 +94,12 @@ send_ntfy_notification() {
 # ------------------------------------------------------------------
 
 idle_seconds() {
-  ioreg -c IOHIDSystem 2>/dev/null | awk '/HIDIdleTime/ { print int($NF / 1000000000); exit }'
+  ioreg -c IOHIDSystem 2>/dev/null | awk '
+    /HIDIdleTime/ && !seen {
+      print int($NF / 1000000000)
+      seen = 1
+    }
+  ' || true
 }
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
