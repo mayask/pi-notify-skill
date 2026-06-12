@@ -17,12 +17,7 @@ Trigger phrases include:
 
 ## Notification behavior
 
-The helper script sends:
-
-- a native macOS notification when the Mac appears active
-- an ntfy notification when the Mac appears idle, unavailable, or not running macOS
-
-Idle detection uses macOS HID idle time. The default idle threshold is 300 seconds.
+The helper script always sends an ntfy notification. It does not use native macOS notifications or idle/uptime tracking.
 
 ## Notification titles
 
@@ -71,20 +66,14 @@ An optional second argument can label the agent (e.g. `"Deploy"`, `"Lint"`):
 ./scripts/notify.sh "Deployment complete" "Deploy"
 ```
 
-## Optional ntfy fallback
+## ntfy configuration
 
-Set these environment variables to enable ntfy fallback notifications:
+Set these environment variables to enable notifications:
 
 ```bash
 export PI_NOTIFY_NTFY_SERVER="https://ntfy.sh"
 export PI_NOTIFY_NTFY_TOPIC="your-topic"
 export PI_NOTIFY_NTFY_TOKEN="your-token"
-```
-
-Optional idle threshold override:
-
-```bash
-export PI_NOTIFY_IDLE_THRESHOLD_SECONDS=300
 ```
 
 ## Customizing notification titles

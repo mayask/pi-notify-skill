@@ -4,7 +4,6 @@ set -euo pipefail
 # Usage: ./notify.sh "<message>" ["<agent-label>"]
 MESSAGE="${1:-Task complete}"
 AGENT_LABEL="${2:-$(whoami)}"
-IDLE_THRESHOLD_SECONDS="${PI_NOTIFY_IDLE_THRESHOLD_SECONDS:-300}"
 
 # ------------------------------------------------------------------
 # Build the notification title.
@@ -58,16 +57,8 @@ build_title() {
 TITLE="$(build_title)"
 
 # ------------------------------------------------------------------
-# Notification backends
+# Notification backend
 # ------------------------------------------------------------------
-
-send_macos_notification() {
-  osascript - "${TITLE}" "${MESSAGE}" <<'APPLESCRIPT' 2>/dev/null || true
-on run argv
-  display notification (item 2 of argv) with title (item 1 of argv) sound name "Glass"
-end run
-APPLESCRIPT
-}
 
 send_ntfy_notification() {
   if [[ -z "${PI_NOTIFY_NTFY_SERVER:-}" || -z "${PI_NOTIFY_NTFY_TOPIC:-}" || -z "${PI_NOTIFY_NTFY_TOKEN:-}" ]]; then
@@ -93,28 +84,4 @@ send_ntfy_notification() {
 # Dispatch
 # ------------------------------------------------------------------
 
-idle_seconds() {
-  ioreg -c IOHIDSystem 2>/dev/null | awk '
-    /HIDIdleTime/ && !seen {
-      print int($NF / 1000000000)
-      seen = 1
-    }
-  ' || true
-}
-
-if [[ "$(uname -s)" != "Darwin" ]]; then
-  send_ntfy_notification
-  exit 0
-fi
-
-IDLE_SECONDS="$(idle_seconds)"
-if [[ -z "${IDLE_SECONDS}" ]]; then
-  send_ntfy_notification
-  exit 0
-fi
-
-if (( IDLE_SECONDS >= IDLE_THRESHOLD_SECONDS )); then
-  send_ntfy_notification
-else
-  send_macos_notification
-fi
+send_ntfy_notification
